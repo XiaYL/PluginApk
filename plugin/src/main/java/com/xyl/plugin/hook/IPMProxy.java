@@ -1,4 +1,4 @@
-package com.xyl.plugin.core;
+package com.xyl.plugin.hook;
 
 import android.content.ComponentName;
 

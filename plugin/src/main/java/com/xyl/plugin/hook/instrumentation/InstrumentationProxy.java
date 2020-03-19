@@ -1,4 +1,4 @@
-package com.xyl.plugin.instrumentation;
+package com.xyl.plugin.hook.instrumentation;
 
 import android.app.Activity;
 import android.app.Instrumentation;
@@ -65,5 +65,9 @@ public class InstrumentationProxy extends Instrumentation {
                     Context.class, IBinder.class, IBinder.class, Activity.class, Intent.class, int.class, Bundle.class);
         }
         return startMethod;
+    }
+
+    private void injectPlugin() {
+
     }
 }

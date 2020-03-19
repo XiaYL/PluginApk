@@ -11,16 +11,13 @@ public class ApkUtils {
 
     private static final String TAG = "ApkUtils";
 
-    public static void analyze(Context context, File apk) {
+    public static PackageInfo analyze(Context context, File apk) {
         if (apk == null || !apk.exists()) {
-            Log.e(TAG, "invalid apk");
-            return;
+            return null;
         }
         PackageManager packageManager = context.getPackageManager();
         PackageInfo packageInfo = packageManager.getPackageArchiveInfo(apk.getAbsolutePath(),
                 PackageManager.GET_ACTIVITIES);
-        if (packageInfo != null) {
-            Log.i(TAG, "analyze: " + packageInfo);
-        }
+        return packageInfo;
     }
 }

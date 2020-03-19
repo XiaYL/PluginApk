@@ -1,9 +1,9 @@
-package com.xyl.plugin.instrumentation;
+package com.xyl.plugin.hook.instrumentation;
 
 import android.app.Instrumentation;
 import android.content.Context;
 
-import com.xyl.plugin.core.BaseHookDelegate;
+import com.xyl.plugin.hook.BaseHookDelegate;
 import com.xyl.plugin.ReflectionUtil;
 
 import java.lang.reflect.Field;

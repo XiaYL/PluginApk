@@ -1,11 +1,11 @@
-package com.xyl.plugin.ams;
+package com.xyl.plugin.hook.ams;
 
 import android.content.Context;
 import android.os.Build;
 import android.os.Handler;
 
 import com.xyl.plugin.ReflectionUtil;
-import com.xyl.plugin.core.BaseHookDelegate;
+import com.xyl.plugin.hook.BaseHookDelegate;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;

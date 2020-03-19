@@ -24,10 +24,10 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.UserHandle;
 
+import java.util.List;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-
-import java.util.List;
 
 public class PluginPackageManager extends PackageManager {
 
@@ -39,12 +39,12 @@ public class PluginPackageManager extends PackageManager {
 
     @Override
     public PackageInfo getPackageInfo(@NonNull String packageName, int flags) throws NameNotFoundException {
-        return null;
+        return mPlugin.getPackageInfo();
     }
 
     @Override
     public PackageInfo getPackageInfo(@NonNull VersionedPackage versionedPackage, int flags) throws NameNotFoundException {
-        return null;
+        return mPlugin.getPackageInfo();
     }
 
     @Override

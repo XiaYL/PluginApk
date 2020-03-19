@@ -1,4 +1,4 @@
-package com.xyl.plugin.ams;
+package com.xyl.plugin.hook.ams;
 
 import android.content.Intent;
 

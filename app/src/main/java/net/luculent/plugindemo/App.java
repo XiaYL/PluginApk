@@ -4,7 +4,7 @@ import android.app.Application;
 import android.content.Context;
 
 import com.xyl.plugin.PluginManager;
-import com.xyl.plugin.core.IPluginHook;
+import com.xyl.plugin.hook.IPluginHook;
 
 public class App extends Application {
 
@@ -17,7 +17,7 @@ public class App extends Application {
     protected void attachBaseContext(Context base) {
         super.attachBaseContext(base);
         try {
-            PluginManager.getInstance(IPluginHook.AMS).attach(base);
+            PluginManager.getInstance().attach(base, IPluginHook.INS);
         } catch (Exception e) {
             e.printStackTrace();
         }

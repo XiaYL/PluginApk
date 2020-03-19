@@ -1,12 +1,14 @@
 package com.xyl.plugin;
 
 import android.content.Context;
+import android.text.TextUtils;
 
-import com.xyl.plugin.ams.AMSHookDelegate;
-import com.xyl.plugin.core.IPluginHook;
+import com.xyl.plugin.core.IntentHandler;
 import com.xyl.plugin.core.LoadedPlugin;
 import com.xyl.plugin.core.PluginConfiguration;
-import com.xyl.plugin.instrumentation.INSHookDelegate;
+import com.xyl.plugin.hook.IPluginHook;
+import com.xyl.plugin.hook.ams.AMSHookDelegate;
+import com.xyl.plugin.hook.instrumentation.INSHookDelegate;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,11 +28,31 @@ public class PluginManager {
     private static volatile PluginManager instance;
     private Context mContext;
     private IPluginHook pluginHook;
+    private IntentHandler mIntentHandler;
     private PluginConfiguration mConfiguration;
 
     private Map<String, LoadedPlugin> loadedPluginCaches = new HashMap<>();//已经加载过的插件缓存
 
-    private PluginManager(int mode) {
+    private PluginManager() {
+        mConfiguration = new PluginConfiguration.Builder()
+                .outputDir("")
+                .libDir("")
+                .build();
+    }
+
+    public static PluginManager getInstance() {
+        if (instance == null) {
+            synchronized (PluginManager.class) {
+                if (instance == null) {
+                    instance = new PluginManager();
+                }
+            }
+        }
+        return instance;
+    }
+
+    public void attach(Context context, @IPluginHook.HookMode int mode) throws Exception {
+        this.mContext = context;
         if (mode == IPluginHook.AMS) {
             pluginHook = new AMSHookDelegate();
         } else if (mode == IPluginHook.INS) {
@@ -38,26 +60,8 @@ public class PluginManager {
         } else {
             throw new IllegalArgumentException("hook mode invalid");
         }
-        mConfiguration = new PluginConfiguration.Builder()
-                .outputDir("")
-                .libDir("")
-                .build();
-    }
-
-    public static PluginManager getInstance(@IPluginHook.HookMode int mode) {
-        if (instance == null) {
-            synchronized (PluginManager.class) {
-                if (instance == null) {
-                    instance = new PluginManager(mode);
-                }
-            }
-        }
-        return instance;
-    }
-
-    public void attach(Context context) throws Exception {
-        this.mContext = context;
         pluginHook.hook(context);
+        mIntentHandler = new IntentHandler(this);
     }
 
     public PluginManager setConfiguration(PluginConfiguration configuration) {
@@ -88,10 +92,20 @@ public class PluginManager {
         if (!file.exists()) {
             throw new FileNotFoundException();
         }
-        LoadedPlugin loadedPlugin = loadedPluginCaches.get(file.getAbsolutePath());
-        if (loadedPlugin == null) {
-            loadedPlugin = LoadedPlugin.loadPlugin(this, mContext, file);
-            loadedPluginCaches.put(file.getAbsolutePath(), loadedPlugin);
+        LoadedPlugin loadedPlugin = LoadedPlugin.loadPlugin(this, mContext, file);
+        loadedPluginCaches.put(file.getAbsolutePath(), loadedPlugin);//直接替换插件
+    }
+
+    public LoadedPlugin getPlugin(String packageName) {
+        for (LoadedPlugin loadedPlugin : loadedPluginCaches.values()) {
+            if (TextUtils.equals(packageName, loadedPlugin.getPackageInfo().packageName)) {
+                return loadedPlugin;
+            }
         }
+        return null;
+    }
+
+    public IntentHandler getIntentHandler() {
+        return mIntentHandler;
     }
 }

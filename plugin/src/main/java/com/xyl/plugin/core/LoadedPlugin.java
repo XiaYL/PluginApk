@@ -1,10 +1,12 @@
 package com.xyl.plugin.core;
 
 import android.content.Context;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 
+import com.xyl.plugin.ApkUtils;
 import com.xyl.plugin.PluginManager;
 
 import java.io.File;
@@ -19,9 +21,15 @@ public class LoadedPlugin {
     private PackageManager mPackageManager;
     private ClassLoader mClassLoader;//对应插件的类加载器
     private Resources mResources;//资源管理类
+    private PackageInfo mPackageInfo;
 
     private LoadedPlugin(PluginManager pluginManager, Context context, File file) throws Exception {
+        PackageInfo info = ApkUtils.analyze(context, file);
+        if (info == null) {
+            throw new IllegalArgumentException("invalid apk file");
+        }
         this.mPluginManager = pluginManager;
+        mPackageInfo = info;
         mContext = new PluginContext(this);
         mPackageManager = new PluginPackageManager(this);
         mClassLoader = createClassLoader(file, context.getClassLoader());
@@ -83,8 +91,11 @@ public class LoadedPlugin {
         return mPackageManager;
     }
 
-
     public Resources getResources() {
         return mResources;
+    }
+
+    public PackageInfo getPackageInfo() {
+        return mPackageInfo;
     }
 }
