@@ -1,5 +1,6 @@
 package com.xyl.plugin.core;
 
+import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
@@ -10,7 +11,11 @@ public class PluginContext extends ContextWrapper {
     private LoadedPlugin mPlugin;
 
     public PluginContext(LoadedPlugin plugin) {
-        super(plugin.getHostContext());
+        this(plugin, plugin.getHostContext());
+    }
+
+    public PluginContext(LoadedPlugin plugin, Context base) {
+        super(base);
         this.mPlugin = plugin;
     }
 
@@ -32,5 +37,10 @@ public class PluginContext extends ContextWrapper {
     @Override
     public PackageManager getPackageManager() {
         return mPlugin.getPackageManager();
+    }
+
+    @Override
+    public Context getApplicationContext() {
+        return super.getApplicationContext();
     }
 }

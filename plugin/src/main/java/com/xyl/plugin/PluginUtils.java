@@ -1,9 +1,8 @@
 package com.xyl.plugin;
 
-import android.content.ComponentName;
-import android.content.Intent;
+import android.content.Context;
 
-import com.xyl.plugin.core.LoadedPlugin;
+import java.io.File;
 
 /**
  * author xiayanlei
@@ -11,11 +10,7 @@ import com.xyl.plugin.core.LoadedPlugin;
  */
 public class PluginUtils {
 
-    public static void isPluginIntent(Intent intent) {
-        ComponentName component = intent.getComponent();
-        LoadedPlugin plugin = PluginManager.getInstance().getPlugin(component.getPackageName());
-        if (plugin == null) {
-
-        }
+    public static File getDir(Context context, String name) {
+        return context.getDir(name, Context.MODE_PRIVATE);
     }
 }

@@ -1,5 +1,6 @@
 package com.xyl.plugin;
 
+import android.app.Instrumentation;
 import android.content.Context;
 import android.text.TextUtils;
 
@@ -23,7 +24,9 @@ public class PluginManager {
     private static final String TAG = "PluginManager";
     public static final String PLUGIN_PROXY_ACTIVITY = PluginProxyActivity.class.getName();
     public static final String TARGET_INTENT = "target_intent";
-    public static final String TARGET_ACTIVITY_NAME = "target_activity_name";
+    public static final String PLUGIN_FLAG = "plugin_flag";
+    private static final String dexOptDir = "optdex";
+    private static final String nativeLibDir = "navlibs";
 
     private static volatile PluginManager instance;
     private Context mContext;
@@ -34,10 +37,6 @@ public class PluginManager {
     private Map<String, LoadedPlugin> loadedPluginCaches = new HashMap<>();//已经加载过的插件缓存
 
     private PluginManager() {
-        mConfiguration = new PluginConfiguration.Builder()
-                .outputDir("")
-                .libDir("")
-                .build();
     }
 
     public static PluginManager getInstance() {
@@ -70,6 +69,12 @@ public class PluginManager {
     }
 
     public PluginConfiguration getConfiguration() {
+        if (mConfiguration == null) {
+            mConfiguration = new PluginConfiguration.Builder()
+                    .outputDir(PluginUtils.getDir(mContext, dexOptDir))
+                    .libDir(PluginUtils.getDir(mContext, nativeLibDir))
+                    .build();
+        }
         return mConfiguration;
     }
 
@@ -86,6 +91,9 @@ public class PluginManager {
      * @param file
      */
     public void loadPlugin(File file) throws Exception {
+        if (getHostContext() == null) {
+            throw new IllegalAccessException("must call attach first");
+        }
         if (file == null) {
             throw new IllegalArgumentException("plugin file is null");
         }
@@ -103,6 +111,10 @@ public class PluginManager {
             }
         }
         return null;
+    }
+
+    public Instrumentation getInstrumentation() throws Exception {
+        return pluginHook.getInstrumentation();
     }
 
     public IntentHandler getIntentHandler() {

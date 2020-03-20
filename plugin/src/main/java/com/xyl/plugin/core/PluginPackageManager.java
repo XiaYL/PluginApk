@@ -6,6 +6,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.ChangedPackages;
+import android.content.pm.ComponentInfo;
 import android.content.pm.FeatureInfo;
 import android.content.pm.InstrumentationInfo;
 import android.content.pm.PackageInfo;
@@ -24,6 +25,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.UserHandle;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import androidx.annotation.NonNull;
@@ -32,9 +34,11 @@ import androidx.annotation.Nullable;
 public class PluginPackageManager extends PackageManager {
 
     private LoadedPlugin mPlugin;
+    private PackageManager mHostPackageManager;
 
     PluginPackageManager(LoadedPlugin plugin) {
         this.mPlugin = plugin;
+        mHostPackageManager = plugin.getHostContext().getPackageManager();
     }
 
     @Override
@@ -43,7 +47,8 @@ public class PluginPackageManager extends PackageManager {
     }
 
     @Override
-    public PackageInfo getPackageInfo(@NonNull VersionedPackage versionedPackage, int flags) throws NameNotFoundException {
+    public PackageInfo getPackageInfo(@NonNull VersionedPackage versionedPackage, int flags) throws
+            NameNotFoundException {
         return mPlugin.getPackageInfo();
     }
 
@@ -91,13 +96,15 @@ public class PluginPackageManager extends PackageManager {
 
     @NonNull
     @Override
-    public List<PermissionInfo> queryPermissionsByGroup(@NonNull String permissionGroup, int flags) throws NameNotFoundException {
+    public List<PermissionInfo> queryPermissionsByGroup(@NonNull String permissionGroup, int flags) throws
+            NameNotFoundException {
         return null;
     }
 
     @NonNull
     @Override
-    public PermissionGroupInfo getPermissionGroupInfo(@NonNull String permissionName, int flags) throws NameNotFoundException {
+    public PermissionGroupInfo getPermissionGroupInfo(@NonNull String permissionName, int flags) throws
+            NameNotFoundException {
         return null;
     }
 
@@ -116,7 +123,12 @@ public class PluginPackageManager extends PackageManager {
     @NonNull
     @Override
     public ActivityInfo getActivityInfo(@NonNull ComponentName component, int flags) throws NameNotFoundException {
-        return null;
+        for (ActivityInfo activityInfo : mPlugin.getPackageInfo().activities) {
+            if (match(activityInfo, component)) {
+                return activityInfo;
+            }
+        }
+        return mHostPackageManager.getActivityInfo(component, flags);
     }
 
     @NonNull
@@ -276,7 +288,16 @@ public class PluginPackageManager extends PackageManager {
     @NonNull
     @Override
     public List<ResolveInfo> queryIntentActivities(@NonNull Intent intent, int flags) {
-        return null;
+        List<ResolveInfo> resolveInfos = new ArrayList<>();
+        for (ActivityInfo activityInfo : mPlugin.getPackageInfo().activities) {
+            ComponentName component = intent.getComponent();
+            if (match(activityInfo, component)) {
+                ResolveInfo resolveInfo = new ResolveInfo();
+                resolveInfo.activityInfo = activityInfo;
+                resolveInfos.add(resolveInfo);
+            }
+        }
+        return resolveInfos;
     }
 
     @NonNull
@@ -324,7 +345,8 @@ public class PluginPackageManager extends PackageManager {
 
     @NonNull
     @Override
-    public InstrumentationInfo getInstrumentationInfo(@NonNull ComponentName className, int flags) throws NameNotFoundException {
+    public InstrumentationInfo getInstrumentationInfo(@NonNull ComponentName className, int flags) throws
+            NameNotFoundException {
         return null;
     }
 
@@ -565,6 +587,14 @@ public class PluginPackageManager extends PackageManager {
 
     @Override
     public boolean canRequestPackageInstalls() {
+        return false;
+    }
+
+    public boolean match(ComponentInfo componentInfo, ComponentName componentName) {
+        ComponentName targetComponent = new ComponentName(componentInfo.name, componentInfo.packageName);
+        if (targetComponent.equals(componentName)) {
+            return true;
+        }
         return false;
     }
 }

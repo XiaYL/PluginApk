@@ -1,5 +1,6 @@
 package com.xyl.plugin.hook;
 
+import android.app.Instrumentation;
 import android.content.Context;
 
 import androidx.annotation.IntDef;
@@ -17,4 +18,6 @@ public interface IPluginHook {
     }
 
     void hook(Context context) throws Exception;
+
+    Instrumentation getInstrumentation() throws Exception;
 }

@@ -32,7 +32,6 @@ public class IntentHandler {
         if (!isFromHostIntent(intent)) {//在插件apk中
             LoadedPlugin plugin = mPluginManager.getPlugin(intent.getComponent().getPackageName());
             if (plugin != null) {//找到对应的插件，在插件apk中查找匹配的活动
-
             }
         }
         return intent;

@@ -1,5 +1,7 @@
 package com.xyl.plugin.core;
 
+import java.io.File;
+
 public class PluginConfiguration {
 
     private String outputDir;
@@ -29,6 +31,16 @@ public class PluginConfiguration {
 
         public Builder libDir(String libDir) {
             this.libDir = libDir;
+            return this;
+        }
+
+        public Builder outputDir(File outputDir) {
+            this.outputDir = outputDir.getAbsolutePath();
+            return this;
+        }
+
+        public Builder libDir(File libDir) {
+            this.libDir = libDir.getAbsolutePath();
             return this;
         }
 

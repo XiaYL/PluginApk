@@ -7,7 +7,6 @@ import android.os.Handler;
 import com.xyl.plugin.ReflectionUtil;
 import com.xyl.plugin.hook.BaseHookDelegate;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 public class AMSHookDelegate extends BaseHookDelegate {
@@ -26,37 +25,34 @@ public class AMSHookDelegate extends BaseHookDelegate {
      *
      * @param context
      */
-    private static void hookAMS(Context context) throws Exception {
+    private void hookAMS(Context context) throws Exception {
         Object amSingleton;
         Class targetClazz;
         int sdkInt = Build.VERSION.SDK_INT;
         if (sdkInt >= Build.VERSION_CODES.Q) {
-            Class atmClazz = Class.forName("android.app.ActivityTaskManager");
-            amSingleton = ReflectionUtil.getField(atmClazz, null, "IActivityTaskManagerSingleton");
-            targetClazz = Class.forName("android.app.IActivityTaskManager");
+            amSingleton = ReflectionUtil.with("android.app.ActivityTaskManager").field
+                    ("IActivityTaskManagerSingleton").get();
+            targetClazz = ReflectionUtil.loadClass("android.app.IActivityTaskManager");
         } else if (sdkInt >= Build.VERSION_CODES.O) {
-            Class amClazz = Class.forName("android.app.ActivityManager");
-            amSingleton = ReflectionUtil.getField(amClazz, null, "IActivityManagerSingleton");
-            targetClazz = Class.forName("android.app.IActivityManager");
+            amSingleton = ReflectionUtil.with("android.app.ActivityManager").field("IActivityManagerSingleton").get();
+            targetClazz = ReflectionUtil.loadClass("android.app.IActivityManager");
         } else {
-            Class amnClazz = Class.forName("android.app.ActivityManagerNative");
-            amSingleton = ReflectionUtil.getField(amnClazz, null, "gDefault");
-            targetClazz = Class.forName("android.app.IActivityManager");
+            amSingleton = ReflectionUtil.with("android.app.ActivityManagerNative").field("gDefault").get();
+            targetClazz = ReflectionUtil.loadClass("android.app.IActivityManager");
         }
 
-        Class singleton = Class.forName("android.util.Singleton");
-        Method gMethod = singleton.getDeclaredMethod("get");
-        Object target = gMethod.invoke(amSingleton);//通过get方法获取mInstance对象
+        //获取mInstance对象
+        Object target = ReflectionUtil.with(amSingleton).invokeMethod("get");
 
         Object proxy = Proxy.newProxyInstance(Thread.currentThread().getContextClassLoader(),
                 new Class<?>[]{targetClazz}, new IActivityManagerProxy(target, context.getPackageName()));
-        ReflectionUtil.setField(singleton, amSingleton, "mInstance", proxy);
+        ReflectionUtil.with(amSingleton).field("mInstance").set(proxy);
     }
 
-    private static void hookHandler(Context context) throws Exception {
+    private void hookHandler(Context context) throws Exception {
         //获取当前ActivityThread对象
-        Object currentThread = ReflectionUtil.getField(context.getClass(), context, "mMainThread");
-        Handler mH = (Handler) ReflectionUtil.getField(currentThread.getClass(), currentThread, "mH");//获取handler对象
-        ReflectionUtil.setField(Handler.class, mH, "mCallback", new HCallback(mH));
+        Object currentThread = getCurrentThread(context);
+        Handler mH = (Handler) ReflectionUtil.with(currentThread).field("mH").get();//获取handler对象
+        ReflectionUtil.with(mH).field("mCallback").set(new HCallback(mH));
     }
 }

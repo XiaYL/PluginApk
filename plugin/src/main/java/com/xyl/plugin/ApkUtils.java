@@ -18,6 +18,7 @@ public class ApkUtils {
         PackageManager packageManager = context.getPackageManager();
         PackageInfo packageInfo = packageManager.getPackageArchiveInfo(apk.getAbsolutePath(),
                 PackageManager.GET_ACTIVITIES);
+        Log.i(TAG, "analyze: " + packageInfo);
         return packageInfo;
     }
 }

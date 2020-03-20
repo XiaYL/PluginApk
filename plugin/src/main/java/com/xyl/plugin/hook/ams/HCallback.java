@@ -7,7 +7,6 @@ import android.os.Message;
 import com.xyl.plugin.PluginManager;
 import com.xyl.plugin.ReflectionUtil;
 
-import java.lang.reflect.Field;
 import java.util.List;
 
 public class HCallback implements Handler.Callback {
@@ -36,8 +35,7 @@ public class HCallback implements Handler.Callback {
             Object transaction = msg.obj;//实际类:ClientTransaction
             List<?> callbacks = null;
             try {
-                callbacks = (List<?>) ReflectionUtil.getField(transaction.getClass(), transaction,
-                        "mActivityCallbacks");
+                callbacks = (List<?>) ReflectionUtil.with(transaction).field("mActivityCallbacks").get();
                 Object callback = callbacks.size() > 0 ? callbacks.get(0) : null;
                 Class launchItem = getLaunchClazz();//启动activity
                 if (launchItem.isInstance(callback)) {//替换mIntent对象
@@ -53,10 +51,9 @@ public class HCallback implements Handler.Callback {
 
 
     private void handleLaunch(Object pipe, String name) throws Exception {
-        Field intentFld = ReflectionUtil.getField(pipe.getClass(), name);
-        Intent intent = (Intent) intentFld.get(pipe);
+        Intent intent = (Intent) ReflectionUtil.with(pipe).field(name).get();
         Intent target = replacePluginIntent(intent);
-        intentFld.set(pipe, target);
+        ReflectionUtil.with(pipe).field(name).set(target);
     }
 
     /**

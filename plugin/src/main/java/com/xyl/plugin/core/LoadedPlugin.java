@@ -1,5 +1,7 @@
 package com.xyl.plugin.core;
 
+import android.app.Application;
+import android.app.Instrumentation;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -8,20 +10,21 @@ import android.content.res.Resources;
 
 import com.xyl.plugin.ApkUtils;
 import com.xyl.plugin.PluginManager;
+import com.xyl.plugin.ReflectionUtil;
 
 import java.io.File;
-import java.lang.reflect.Method;
 
 import dalvik.system.DexClassLoader;
 
 public class LoadedPlugin {
 
     private PluginManager mPluginManager;
-    private Context mContext;//插件上下文环境
+    private Context mPluginContext;//插件上下文环境
     private PackageManager mPackageManager;
+    private PackageInfo mPackageInfo;
     private ClassLoader mClassLoader;//对应插件的类加载器
     private Resources mResources;//资源管理类
-    private PackageInfo mPackageInfo;
+    private Application mApplication;
 
     private LoadedPlugin(PluginManager pluginManager, Context context, File file) throws Exception {
         PackageInfo info = ApkUtils.analyze(context, file);
@@ -30,14 +33,17 @@ public class LoadedPlugin {
         }
         this.mPluginManager = pluginManager;
         mPackageInfo = info;
-        mContext = new PluginContext(this);
+        mPluginContext = createPluginContext(null);
         mPackageManager = new PluginPackageManager(this);
         mClassLoader = createClassLoader(file, context.getClassLoader());
         mResources = createResources(context, file.getAbsolutePath());
+        copyNativeLibs();
+        mApplication = createApplication(mPackageInfo.applicationInfo.className);
     }
 
 
-    public static LoadedPlugin loadPlugin(PluginManager pluginManager, Context context, File file) throws Exception {
+    public static LoadedPlugin loadPlugin(PluginManager pluginManager, Context context, File
+            file) throws Exception {
         return new LoadedPlugin(pluginManager, context, file);
     }
 
@@ -50,7 +56,8 @@ public class LoadedPlugin {
      */
     private DexClassLoader createClassLoader(File dexFile, ClassLoader parent) {
         PluginConfiguration configuration = mPluginManager.getConfiguration();
-        DexClassLoader loader = new DexClassLoader(dexFile.getAbsolutePath(), configuration.getOutputDir(),
+        DexClassLoader loader = new DexClassLoader(dexFile.getAbsolutePath(), configuration
+                .getOutputDir(),
                 configuration.getLibDir(), parent);
         return loader;
     }
@@ -65,13 +72,29 @@ public class LoadedPlugin {
      */
     private Resources createResources(Context hostContext, String apk) throws Exception {
         Resources hostResources = hostContext.getResources();//宿主apk的资源加载器
-        AssetManager assetManager = AssetManager.class.newInstance();
-        Method method = AssetManager.class.getMethod("addAssetPath", String.class);
-        method.setAccessible(true);
-        method.invoke(assetManager, apk);
+        AssetManager assetManager = ReflectionUtil.newInstance(AssetManager.class);
+        ReflectionUtil.with(assetManager).invokeMethod("addAssetPath", apk);
         Resources resources = new Resources(assetManager, hostResources.getDisplayMetrics(),
                 hostResources.getConfiguration());
         return resources;
+    }
+
+    /**
+     * 拷贝so包
+     */
+    private void copyNativeLibs() {
+
+    }
+
+    private Application createApplication(String appClass) throws Exception {
+        if (appClass == null) {
+            appClass = "android.app.Application";
+        }
+        Instrumentation instrumentation = mPluginManager.getInstrumentation();
+        Application application = instrumentation.newApplication(mClassLoader, appClass,
+                getPluginContext());
+//        instrumentation.callApplicationOnCreate(application);
+        return application;
     }
 
     /**
@@ -81,6 +104,17 @@ public class LoadedPlugin {
      */
     public Context getHostContext() {
         return mPluginManager.getHostContext();
+    }
+
+    public PluginContext createPluginContext(Context base) {
+        if (base == null) {
+            return new PluginContext(this);
+        }
+        return new PluginContext(this, base);
+    }
+
+    public Context getPluginContext() {
+        return mPluginContext;
     }
 
     public ClassLoader getClassLoader() {
@@ -97,5 +131,9 @@ public class LoadedPlugin {
 
     public PackageInfo getPackageInfo() {
         return mPackageInfo;
+    }
+
+    public Application getApplication() {
+        return mApplication;
     }
 }
